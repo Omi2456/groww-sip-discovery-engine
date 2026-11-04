@@ -1,0 +1,16 @@
+{
+  "title": "Groww SIP Discovery Engine evidence corpus",
+  "created_from": "The two CSV files bundled with the no-Ollama discovery app",
+  "records_total": 3300,
+  "groww_review_records": 3273,
+  "public_discussion_records": 27,
+  "groww_review_ids_unique": 3273,
+  "public_discussion_ids_unique": 27,
+  "blank_text_records": 0,
+  "blank_original_record_ids": 0,
+  "groww_individual_review_urls_available": 0,
+  "reddit_direct_urls_available": 27,
+  "source_dataset_url": "https://huggingface.co/datasets/Avaneeshkarthik/groww-app-reviews",
+  "google_play_app_page_url": "https://play.google.com/store/apps/details?id=com.nextbillion.groww&hl=en_IN",
+  "numbering": "Stable evidence IDs R0001 onward in master CSV; source_record_id preserves the original reviewId or Reddit source_id."
+}

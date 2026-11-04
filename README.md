@@ -1,0 +1,44 @@
+# Groww SIP Discovery Engine
+
+An evidence-first discovery tool for exploring customer feedback about Groww SIP experiences. The app retrieves relevant review and public-discussion records, shows source references and recurring signals, and frames a possible opportunity as a hypothesis to investigate.
+
+## Try the live app
+
+The app is designed for Streamlit Community Cloud. It requires no Ollama installation, model download, API key, or paid inference service. See [UPLOAD_AND_DEPLOY.md](UPLOAD_AND_DEPLOY.md) for deployment steps.
+
+## What the engine does
+
+- Searches the included Groww review subset, source-linked public discussions, and optional CSV uploads.
+- Displays matching evidence with R01-style reference numbers and source details.
+- Summarizes recurring themes within retrieved examples. Counts describe the selected records, not the entire customer population.
+- Provides six preset research questions covering SIP pauses/stops, AutoPay and debits, payment or unit status, off-app behavior, positive versus problem reports, and 12-month continuation.
+- Compares high- and low-rated SIP-related reviews for the positive-experience question. Star ratings are only a rough proxy for review sentiment.
+- Flags 12-month retention as a data gap: the included reviews do not follow the same investors over time.
+- Suggests an opportunity to investigate, clearly marked as an unvalidated hypothesis.
+
+The search uses BM25 lexical ranking with SIP terminology expansion and rule-based summaries. It is evidence-grounded, not an open-ended generative chatbot. Unsupported questions receive a no-match response.
+
+## Evidence and provenance
+
+The app uses **3,273 SIP-related Groww review records** and **27 source-linked public discussions**. It does not use all ~323K reviews in the original source dataset.
+
+- [Original Groww app reviews dataset on Hugging Face](https://huggingface.co/datasets/Avaneeshkarthik/groww-app-reviews)
+- `groww_sip_explicit_candidates.csv`: review subset loaded by the app, with original review IDs and available metadata.
+- `groww_sip_reddit_pilot.csv`: public discussions loaded by the app, with source IDs and direct URLs.
+- `groww_sip_discovery_evidence.csv`: combined, structured evidence table with stable evidence IDs and original IDs preserved.
+- `dataset_manifest.json` and `README_data_provenance.txt`: counts, fields, and traceability notes.
+
+Reddit references link to original discussions. Groww review IDs are preserved, but the source dataset does not provide verified individual Play Store review URLs; the app links to the general Groww listing and identifies it as such.
+
+## Run locally
+
+```powershell
+python -m pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+No secrets or environment variables are required.
+
+## Upload a CSV
+
+The app accepts CSV files up to 20 MB and indexes up to 5,000 non-empty rows per upload. A text column is required: `user_statement`, `content`, `text`, `review`, `review_text`, `body`, or `comment`. Optional columns include an ID, source URL, source/platform, and date. Uploads remain in the app session.
