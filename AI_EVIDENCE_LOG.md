@@ -2,77 +2,89 @@
 
 **Working branch:** `ai-discovery-gemini`  
 **Prepared:** 7 November 2026  
-**Status:** Evidence inventory and Golden Set selection prepared; human annotation and AI evaluation are still pending.
+**Status:** Provisional assistant-coded reference labels completed for 20 records. Independent model classification and human validation have not been completed. No agreement score is claimed.
 
-## 1. Evidence corpus used
+## 1. Evidence corpus
 
-The deployed discovery app currently reports 3,273 Groww app-review records and 27 source-linked public discussions. The 27 discussions are stored in `groww_sip_reddit_pilot.csv`. This Golden Set is sampled from those 27 discussions only, as agreed with the project owner.
+The deployed discovery app reports 3,273 Groww app-review records and 27 source-linked public discussions. The 20-record evaluation sample is drawn from the 27 public discussions and is stored in `golden_set_20.csv`.
 
-The larger Groww review export has original review IDs but no verified individual Google Play review URLs or app/package ID in the downloaded source file. For this evaluation, the source-linked public discussions are preferred because each selected record has a direct Reddit URL. A source page confirms that text is visible at that URL; it does not independently verify the user's financial or product claims.
+The app-review export has original review IDs but no verified individual Google Play review URLs in the downloaded source. The public discussions were selected because they retain direct source URLs. A source page confirms that text is visible at that URL; it does not independently verify the author's product or financial claims.
 
-## 2. Golden Set selection
+## 2. Sample selection
 
-- Selected: **20 of the 27** source-linked discussions.
-- Selection is purposive/stratified for coverage, not random and not statistically representative.
-- The selected records include positive experience, SIP setup/step-up, pause/skip/cancellation, AutoPay/mandate, payment failure, transaction/unit status, holding-format concerns, and adjacent/general SIP questions.
-- The seven unselected records are not treated as invalid; they were excluded to keep this first evaluation set to 20 and reduce near-duplicate theme concentration.
-- Full source text, URL, source ID, displayed date, subreddit, source scope and verification status are preserved in `golden_set_20.csv`.
+- 20 of 27 source-linked discussions selected.
+- Purposive coverage sample, not random or statistically representative.
+- Topics include positive experience, setup, step-up, pausing, payment, AutoPay, status/visibility, unit allocation and adjacent/general SIP questions.
+- Source scope is retained. In particular, GS12 and GS15 are marked Adjacent SIP rather than treated as verified Groww-specific experiences.
 
-## 3. Annotation protocol
+## 3. Provisional reference coding
 
-Complete the `human_*` columns in `golden_set_20.csv` before running or viewing AI classifications. Use only what the feedback text says. Do not infer that a reported issue was caused by Groww or that it is common.
+To meet the deadline, ChatGPT GPT-6 reviewed the raw text of all 20 selected records and populated the proposed classification fields in `golden_set_20.csv`.
 
-Suggested label definitions:
+**Important provenance distinction:** these are assistant-proposed labels, not annotations independently completed or approved by the project owner or a second human annotator. The CSV marks every row `ASSISTANT_PROPOSED_NOT_HUMAN_REVIEWED`. The `human_*` column names are retained for compatibility with the evaluation template, but the annotator field explicitly discloses the actual source of the labels. They must not be represented as user-verified ground truth.
 
-### Relevance
-- `Explicit SIP`: directly describes a SIP, SIP instalment, SIP mandate, SIP setup/control, or SIP status.
-- `Adjacent SIP`: related mutual-fund journey or general SIP question, but not clearly a Groww-specific SIP experience.
-- `Not relevant`: no meaningful SIP/mutual-fund journey relevance.
+### Label definitions
 
-### Journey stage
-Use one primary stage: `Discover/Choose`, `Setup/Start`, `Pay/AutoPay`, `Manage/Pause/Cancel`, `Track/Status/Allocation`, `Change/Step-up`, `Withdraw/Sell`, or `Other/Unclear`.
+**Relevance**
+- `Explicit SIP`: directly describes a SIP, instalment, mandate, setup/control or status.
+- `Adjacent SIP`: general SIP or mutual-fund journey evidence without a clear Groww-specific experience.
+- `Not relevant`: no meaningful SIP journey relevance.
 
-### Primary theme
-Use one concise, specific theme grounded in the text, e.g. `Mandate removal uncertainty`, `Step-up timing confusion`, `Payment failure`, `Transaction visibility mismatch`, `Unit allocation delay`, `Positive ease of use`. Avoid adding a cause not stated by the author.
+**Journey stage:** one primary stage from Discover/Choose, Setup/Start, Pay/AutoPay, Manage/Pause/Cancel, Track/Status/Allocation, Change/Step-up, Withdraw/Sell, Other/Unclear.
 
-### Sentiment
-Use `Positive`, `Negative`, `Mixed`, or `Neutral/Question`. A question seeking help is not automatically proof of a negative product outcome.
+**Sentiment:** Positive, Negative, Mixed, or Neutral/Question. A question alone is not automatically negative.
 
-### Impact/workaround
-Record only an impact or workaround explicitly reported. If absent, write `Not stated`.
+**Impact/workaround:** only what the author explicitly reports; no unstated causal inference.
 
-### Rationale
-One short sentence explaining the labels with a direct link to the text. If uncertain, record uncertainty rather than forcing a precise label.
+### Provisional label distribution
 
-Set `human_annotator` to the actual person who reviewed the record and change `human_label_status` from `PENDING` to `REVIEWED` only after that person has checked the label. The current CSV intentionally leaves all human labels blank; no human annotation or agreement score is being claimed yet.
+- Relevance: 18 Explicit SIP; 2 Adjacent SIP; 0 Not relevant.
+- Sentiment: 2 Positive; 12 Negative; 3 Mixed; 3 Neutral/Question.
+- Journey stage: Setup/Start 2; Pay/AutoPay 3; Manage/Pause/Cancel 3; Track/Status/Allocation 7; Change/Step-up 4; Other/Unclear 1.
 
-## 4. AI evaluation protocol
+These are counts of the 20 selected records under assistant-proposed labels, not population estimates.
 
-After all 20 human labels are reviewed:
-1. Run the same fixed classification prompt/model configuration on each of the 20 raw feedback records independently.
-2. Save the AI's raw structured output and model/date/prompt details in the `ai_*` columns or a linked evaluation log.
-3. Compare AI labels against the human labels using exact-match agreement for relevance, journey stage, primary theme and sentiment. Theme labels should use a pre-agreed controlled vocabulary or adjudicated mapping before scoring.
-4. Report each field's agreement separately: exact matches / 20. Also show a confusion table or list disagreements and why they differ.
-5. Do not calculate an overall agreement percentage by mixing fields unless the method is explicitly defined.
+## 4. AI model evaluation status
 
-**Current evaluation status:** Not run. AI agreement rate: **Not yet measured**. The app's Groq synthesis feature is not itself a 20-record classifier or a completed Golden Set evaluation.
+The deployed Groq feature is a retrieval-grounded synthesis feature: it interprets the top five records retrieved for a user question. It is **not** currently a per-record classifier configured to label all 20 records using the same taxonomy.
 
-## 5. Limitations
+No independent Groq classification run across all 20 records has been captured. Therefore:
+- AI classification fields remain blank in the CSV.
+- Exact-match agreement is **not measured**.
+- No classifier accuracy or agreement percentage is claimed.
+- The successful in-app Groq synthesis test demonstrates that the API integration works; it does not constitute a 20-record classification evaluation.
 
-- The 20 records are a small, purposive sample from 27 public discussions, not a representative sample of Groww investors.
-- Reddit authors are self-selected; the content is self-reported and claims are unverified.
-- Some source dates are relative or indexed-date approximations; preserve the date as displayed rather than treating it as exact.
-- Some records are general SIP category discussions, not direct Groww-specific experiences; their scope must remain visible.
-- These records do not establish 12-month SIP continuation, churn, prevalence, causality, or retention impact.
-- The existing app's 3,273 Groww review records are keyword-screened candidates, not individually source-verified SIP labels.
+A valid next evaluation would require a fixed per-record classification prompt, model/version and date, raw structured outputs for all 20 records, then a comparison against independently human-reviewed labels. The assistant-proposed labels in this file are not independent human ground truth, so even that comparison should be described as exploratory unless a human annotator reviews/adjudicates them.
 
-## 6. Actual AI corrections/rejections
+## 5. Actual AI output audit and corrections
 
-No AI output has yet been independently audited against this 20-record Golden Set. Do not claim 2–3 corrected/rejected outputs until actual model outputs are captured, checked against the cited source text, and the correction rationale is recorded here.
+The user-tested Groq synthesis for the question about AutoPay, missed instalments and payment failures produced hypotheses about payment options, debit priority and mandate status, citing retrieved evidence IDs R01–R05.
 
-## 7. Existing deployed engine
+Audit note: the output should be phrased as reported experiences, not verified product facts. A few public comments cannot establish that a payment method is universally unavailable or that a feature gap is prevalent. The app's cited excerpts and counts should be checked before using the hypotheses in the deck. This is a cautionary review, not a fabricated record of a model correction. No 2–3 corrected/rejected per-record classifier outputs are claimed because no such evaluation run has been captured.
+
+## 6. Limitations
+
+- Small, purposive sample of 20 public discussions from 27; not representative.
+- Self-selected, self-reported public comments; claims are unverified.
+- Some dates are relative or indexed approximations.
+- Adjacent/general SIP posts are not Groww-specific evidence.
+- The records do not track the same investors over 12 months and cannot establish continuation, churn, prevalence, causality or retention impact.
+- The 3,273 app-review records are keyword-screened candidates, not individually verified SIP-labelled records.
+- Assistant-proposed labels require human review before they can be called a human-annotated Golden Set.
+
+## 7. Deployed product
 
 - Repository: https://github.com/Omi2456/groww-sip-discovery-engine
+- Working branch: `ai-discovery-gemini`
 - Live app: https://groww-sip-discovery-engine123.streamlit.app/
-- AI provider: Groq (the app's optional synthesis step analyzes the top retrieved excerpts).
-- Retrieval and theme counts are deterministic; AI synthesis is a separate interpretation layer.
+- AI provider: Groq; model configured in code: `openai/gpt-oss-20b`.
+- Retrieval and theme counts are deterministic; Groq generates interpretation of retrieved excerpts.
+- API credentials are stored in Streamlit secrets, not source code.
+
+## 8. Recommended next steps
+
+1. Have a human reviewer validate or correct the 20 proposed labels.
+2. Implement or run a separate per-record Groq classifier with a fixed prompt and capture raw outputs.
+3. Calculate field-wise agreement only after independent human labels and AI outputs both exist.
+4. Complete genuine interviews and usability tests; record participant consent and actual observations. Do not substitute public comments or survey responses for interviews.
+5. In the final deck, clearly separate desk-research signals, assistant-proposed coding, verified user research and unvalidated product hypotheses.
