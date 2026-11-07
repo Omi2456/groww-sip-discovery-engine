@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.8-flash"
 
 def _clean_text(value: Any, limit: int = 700) -> str:
     return " ".join(str(value or "").split())[:limit]
