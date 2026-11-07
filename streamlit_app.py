@@ -15,7 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 import streamlit as st
-from gemini_discovery import analyze_with_gemini
+from groq_discovery import analyze_with_groq
 
 
 ROOT = Path(__file__).resolve().parent
@@ -446,24 +446,24 @@ with main:
                 st.info("To compare SIP continuation after 12 months, link a consented cohort's start date to later active, paused, or stopped status, then validate the reasons through interviews.")
         else:
             st.info(result["answer"])
-        st.markdown("### Gemini-assisted interpretation")
+        st.markdown("### Groq-assisted interpretation")
         st.caption("Optional AI analysis of only the retrieved excerpts shown above. Evidence IDs are checked against this result set; AI interpretations still require human review.")
-        if st.button("Analyze retrieved evidence with Gemini", key="run_gemini_analysis", use_container_width=True):
+        if st.button("Analyze retrieved evidence with Groq", key="run_gemini_analysis", use_container_width=True):
             try:
-                api_key = st.secrets.get("GEMINI_API_KEY", "")
+                api_key = st.secrets.get("GROQ_API_KEY", "")
             except Exception:
                 api_key = ""
             if not api_key:
-                st.warning("Gemini is not configured yet. Add GEMINI_API_KEY to Streamlit Community Cloud → App → Settings → Secrets. Never put the key in GitHub code.")
+                st.warning("Groq is not configured yet. Add GROQ_API_KEY to Streamlit Community Cloud → App → Settings → Secrets. Never put the key in GitHub code.")
             elif not matches:
                 st.info("Run a search that returns evidence before requesting AI analysis.")
             else:
                 try:
-                    with st.spinner("Gemini is reviewing the retrieved evidence…"):
-                        st.session_state.gemini_analysis = analyze_with_gemini(result["question"], matches, api_key)
+                    with st.spinner("Groq is reviewing the retrieved evidence…"):
+                        st.session_state.gemini_analysis = analyze_with_groq(result["question"], matches, api_key)
                         st.session_state.gemini_analysis_question = result["question"]
                 except Exception as exc:
-                    st.error(f"Gemini analysis could not complete. The evidence search still works. Details: {exc}")
+                    st.error(f"Groq analysis could not complete. The evidence search still works. Details: {exc}")
         if st.session_state.gemini_analysis and st.session_state.gemini_analysis_question == result["question"]:
             ai = st.session_state.gemini_analysis
             st.markdown("#### AI-generated synthesis")
