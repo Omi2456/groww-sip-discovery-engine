@@ -1,6 +1,7 @@
 """Gemini-assisted, evidence-grounded synthesis for the Groww SIP discovery app."""
 from __future__ import annotations
 import json
+import time
 from typing import Any
 
 MODEL_NAME = "gemini-3.8-flash"
@@ -43,10 +44,37 @@ Retrieved evidence:
 {json.dumps(evidence, ensure_ascii=False)}
 """
     client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=MODEL_NAME, contents=prompt,
-        config={"response_mime_type": "application/json"},
-    )
+    response = None
+    last_error = None
+    # Gemini can return transient 503 capacity errors. Retry twice with a short
+    # backoff; do not loop indefinitely or keep the user waiting for long.
+    for attempt, pause in enumerate((0, 2, 5)):
+        if pause:
+            time.sleep(pause)
+        try:
+            response = client.models.generate_content(
+                model=MODEL_NAME,
+                contents=prompt,
+                config={
+                    "response_mime_type": "application/json",
+                    "max_output_tokens": 700,
+                    "temperature": 0.2,
+                },
+            )
+            break
+        except Exception as exc:
+            last_error = exc
+            message = str(exc).lower()
+            transient = any(code in message for code in ("503", "unavailable", "429", "resource_exhausted", "500", "internal"))
+            if not transient or attempt == 2:
+                if transient:
+                    raise RuntimeError(
+                        "Gemini is temporarily busy or rate-limited after 3 attempts. "
+                        "Your evidence search is still available. Wait a minute and try again."
+                    ) from exc
+                raise
+    if response is None:
+        raise RuntimeError("Gemini did not return a response. Please try again.") from last_error
     raw = getattr(response, "text", None)
     if not raw:
         raise ValueError("Gemini returned an empty response.")
