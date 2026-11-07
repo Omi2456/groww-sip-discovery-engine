@@ -16,7 +16,7 @@ The app is designed for Streamlit Community Cloud. It requires no Ollama install
 - Flags 12-month retention as a data gap: the included reviews do not follow the same investors over time.
 - Suggests an opportunity to investigate, clearly marked as an unvalidated hypothesis.
 
-The search uses BM25 lexical ranking with SIP terminology expansion and rule-based summaries. It is evidence-grounded, not an open-ended generative chatbot. Unsupported questions receive a no-match response.
+The search uses BM25 lexical ranking with SIP terminology expansion. An optional Gemini-assisted synthesis analyzes only the top retrieved excerpts, validates returned evidence IDs against the displayed records, and labels opportunities as hypotheses. Deterministic search remains available if Gemini is not configured or unavailable. Unsupported questions receive a no-match response.
 
 ## Evidence and provenance
 
@@ -37,7 +37,7 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-No secrets or environment variables are required.
+The deterministic evidence search works without a key. To enable Gemini-assisted synthesis, add GEMINI_API_KEY to Streamlit Community Cloud app Settings → Secrets. Use TOML such as GEMINI_API_KEY = YOUR_KEY in quotes. Never commit the key to GitHub. The app sends only the top retrieved excerpts for the current question to Gemini; do not upload private or sensitive interview data.
 
 ## Upload a CSV
 
