@@ -519,7 +519,7 @@ with main:
         evaluation_metadata, load_golden_set,
     )
     try:
-        golden_rows = load_golden_set(str(ROOT / "golden_set_20.csv"))
+        golden_rows = load_golden_set(str(ROOT / "golden_set.csv"))
         st.markdown(
             f"<div class='source-card'><b>Fixed evaluation set</b><br>"
             f"<span class='small-muted'>{len(golden_rows)} bundled records · reference labels preserved · no upload required</span></div>",
