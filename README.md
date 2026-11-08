@@ -4,11 +4,11 @@ An evidence-first discovery tool for exploring customer feedback about Groww SIP
 
 ## Try the live app
 
-The app is designed for Streamlit Community Cloud. It requires no Ollama installation, model download, API key, or paid inference service. See [UPLOAD_AND_DEPLOY.md](UPLOAD_AND_DEPLOY.md) for deployment steps.
+The app is designed for Streamlit Community Cloud. Evidence retrieval works without an API key; AI interpretation and Golden Set evaluation use the configured API secret. See [UPLOAD_AND_DEPLOY.md](UPLOAD_AND_DEPLOY.md) for deployment steps.
 
 ## What the engine does
 
-- Searches the included Groww review subset, source-linked public discussions, and optional CSV uploads.
+- Research Workspace searches the bundled Groww review subset and source-linked public discussions.
 - Displays matching evidence with R01-style reference numbers and source details.
 - Summarizes recurring themes within retrieved examples. Counts describe the selected records, not the entire customer population.
 - Provides six preset research questions covering SIP pauses/stops, AutoPay and debits, payment or unit status, off-app behavior, positive versus problem reports, and 12-month continuation.
@@ -16,7 +16,7 @@ The app is designed for Streamlit Community Cloud. It requires no Ollama install
 - Flags 12-month retention as a data gap: the included reviews do not follow the same investors over time.
 - Suggests an opportunity to investigate, clearly marked as an unvalidated hypothesis.
 
-The search uses BM25 lexical ranking with SIP terminology expansion. An optional Groq-assisted synthesis analyzes only the top retrieved excerpts, validates returned evidence IDs against the displayed records, and labels opportunities as hypotheses. Deterministic search remains available if Groq is not configured or unavailable. Unsupported questions receive a no-match response.
+The search uses BM25 lexical ranking with SIP terminology expansion. AI-assisted interpretation analyzes only the top retrieved excerpts, validates returned evidence IDs against the displayed records, and labels opportunities as hypotheses. Deterministic search remains available if Groq is not configured or unavailable. Unsupported questions receive a no-match response.
 
 ## Evidence and provenance
 
@@ -37,8 +37,8 @@ python -m pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-The deterministic evidence search works without a key. To enable Groq-assisted synthesis, add GROQ_API_KEY to Streamlit Community Cloud app Settings → Secrets. Use TOML such as GROQ_API_KEY = YOUR_KEY in quotes. Never commit the key to GitHub. The app sends only the top retrieved excerpts for the current question to Groq; do not upload private or sensitive interview data.
+The deterministic evidence search works without a key. To enable AI-assisted interpretation and Golden Set evaluation, add GROQ_API_KEY to Streamlit Community Cloud app Settings → Secrets. Use TOML such as GROQ_API_KEY = YOUR_KEY in quotes. Never commit the key to GitHub. The app sends only the top retrieved excerpts for the current question to Groq; do not upload private or sensitive interview data.
 
-## Upload a CSV
+## Advanced: Explore your own feedback
 
-The app accepts CSV files up to 20 MB and indexes up to 5,000 non-empty rows per upload. A text column is required: `user_statement`, `content`, `text`, `review`, `review_text`, `body`, or `comment`. Optional columns include an ID, source URL, source/platform, and date. Uploads remain in the app session.
+The optional custom-feedback workspace accepts CSV files up to 20 MB and indexes up to 5,000 non-empty rows per upload. This dataset is explored separately and is never merged into the fixed Golden Set. A text column is required: `user_statement`, `content`, `text`, `review`, `review_text`, `body`, or `comment`. Optional columns include an ID, source URL, source/platform, and date. Uploads remain in the app session.
