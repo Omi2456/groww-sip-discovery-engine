@@ -1,11 +1,13 @@
 import json
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from golden_set_evaluation import (
     _extract_json_object,
     _validate,
+    load_golden_set,
     build_results_csv,
     calculate_agreement,
     classify_record,
@@ -25,6 +27,14 @@ class GoldenSetEvaluationTests(unittest.TestCase):
             "human_annotator": "Reviewer",
             "human_label_status": "FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER",
         }
+
+    def test_bundled_golden_set_has_20_labeled_records(self):
+        path = Path(__file__).resolve().parents[1] / "golden_set_20.csv"
+        rows = load_golden_set(str(path))
+        self.assertEqual(len(rows), 20)
+        self.assertTrue(all(row["human_relevance_label"] for row in rows))
+        self.assertTrue(all(row["human_journey_stage"] for row in rows))
+        self.assertTrue(all(row["human_sentiment"] for row in rows))
 
     def test_extracts_json_from_markdown_fence(self):
         parsed = _extract_json_object('prefix\n```json\n{"relevance":"Explicit SIP"}\n```')
