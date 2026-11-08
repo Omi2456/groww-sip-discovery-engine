@@ -237,7 +237,7 @@ def calculate_agreement(rows: list[dict[str, str]], results: dict[str, dict[str,
     fields = {
         "Relevance": ("human_relevance_label", "relevance"),
         "Journey stage": ("human_journey_stage", "journey_stage"),
-        "Primary theme (exact text)": ("human_primary_theme", "primary_theme"),
+        "Primary theme (controlled taxonomy, exact label)": ("human_primary_theme", "primary_theme"),
         "Sentiment": ("human_sentiment", "sentiment"),
     }
     report = {}
