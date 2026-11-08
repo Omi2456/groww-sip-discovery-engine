@@ -31,7 +31,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
         }
 
     def test_bundled_golden_set_has_20_labeled_records(self):
-        path = Path(__file__).resolve().parents[1] / "golden_set_20.csv"
+        path = Path(__file__).resolve().parents[1] / "golden_set.csv"
         rows = load_golden_set(str(path))
         self.assertEqual(len(rows), 20)
         self.assertTrue(all(row["human_relevance_label"] for row in rows))
