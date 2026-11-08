@@ -24,7 +24,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
             "raw_feedback": "I like the simple SIP setup.",
             "human_relevance_label": "Explicit SIP",
             "human_journey_stage": "Setup/Start",
-            "human_primary_theme": "Positive ease of use",
+            "human_primary_theme": "Positive ease of use and SIP controls",
             "human_sentiment": "Positive",
             "human_annotator": "Reviewer",
             "human_label_status": "FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER",
@@ -57,7 +57,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
         payload = {
             "relevance": "Explicit SIP",
             "journey_stage": "Setup/Start",
-            "primary_theme": "Positive ease of use",
+            "primary_theme": "Positive ease of use and SIP controls",
             "sentiment": "Positive",
             "rationale": "The author reports easy SIP setup.",
         }
@@ -84,7 +84,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
         good = {
             "relevance": "Explicit SIP",
             "journey_stage": "Setup/Start",
-            "primary_theme": "Positive ease of use",
+            "primary_theme": "Positive ease of use and SIP controls",
             "sentiment": "Positive",
             "rationale": "The author reports easy SIP setup.",
         }
@@ -107,7 +107,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
                 "status": "success",
                 "relevance": "Explicit SIP",
                 "journey_stage": "Setup/Start",
-                "primary_theme": "Positive ease of use",
+                "primary_theme": "Positive ease of use and SIP controls",
                 "sentiment": "Positive",
                 "raw_output": '{"audited":true}',
             }
@@ -119,7 +119,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
         self.assertIn("FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER", csv_text)
         exported = next(csv.DictReader(io.StringIO(csv_text)))
         self.assertEqual(exported["ai_raw_output"], '{"audited":true}')
-        self.assertIn("Positive ease of use", csv_text)
+        self.assertIn("Positive ease of use and SIP controls", csv_text)
 
 
 if __name__ == "__main__":
