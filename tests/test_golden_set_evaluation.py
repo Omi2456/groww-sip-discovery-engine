@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import unittest
 from pathlib import Path
@@ -115,7 +117,8 @@ class GoldenSetEvaluationTests(unittest.TestCase):
         self.assertEqual(agreement["Relevance"]["denominator"], 1)
         csv_text = build_results_csv([self.row], results)
         self.assertIn("FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER", csv_text)
-        self.assertIn('{"audited":true}', csv_text)
+        exported = next(csv.DictReader(io.StringIO(csv_text)))
+        self.assertEqual(exported["ai_raw_output"], '{"audited":true}')
         self.assertIn("Positive ease of use", csv_text)
 
 
