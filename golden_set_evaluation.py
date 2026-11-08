@@ -167,12 +167,13 @@ def classify_record(row: dict[str, str], api_key: str) -> dict[str, Any]:
 
 def build_results_csv(rows: list[dict[str, str]], results: dict[str, dict[str, Any]]) -> str:
     """Combine immutable source/reference columns with AI output and audit fields."""
-    fields = list(rows[0].keys()) + [
+    extra_fields = [
         "evaluation_status", "ai_relevance_label", "ai_journey_stage",
         "ai_primary_theme", "ai_sentiment", "ai_rationale", "ai_raw_output",
         "ai_error", "ai_attempts", "agreement_relevance_exact",
         "agreement_journey_exact", "agreement_theme_exact", "agreement_sentiment_exact",
     ]
+    fields = list(rows[0].keys()) + [field for field in extra_fields if field not in rows[0]]
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
