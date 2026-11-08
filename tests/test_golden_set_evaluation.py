@@ -27,7 +27,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
             "human_primary_theme": "Positive ease of use and SIP controls",
             "human_sentiment": "Positive",
             "human_annotator": "Reviewer",
-            "human_label_status": "FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER",
+            "human_label_status": "Friend-reviewed (reported by project owner)",
         }
 
     def test_bundled_golden_set_has_20_labeled_records(self):
@@ -116,7 +116,7 @@ class GoldenSetEvaluationTests(unittest.TestCase):
         self.assertEqual(agreement["Relevance"]["matches"], 1)
         self.assertEqual(agreement["Relevance"]["denominator"], 1)
         csv_text = build_results_csv([self.row], results)
-        self.assertIn("FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER", csv_text)
+        self.assertIn("Friend-reviewed (reported by project owner)", csv_text)
         exported = next(csv.DictReader(io.StringIO(csv_text)))
         self.assertEqual(exported["ai_raw_output"], '{"audited":true}')
         self.assertIn("Positive ease of use and SIP controls", csv_text)
