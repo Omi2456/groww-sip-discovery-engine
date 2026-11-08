@@ -44,6 +44,8 @@ def load_golden_set(path: str) -> list[dict[str, str]]:
 def _extract_json_object(raw: str) -> dict[str, Any]:
     """Parse JSON even if the model wraps it in a Markdown fence or short preamble."""
     text = (raw or "").strip()
+    if not text:
+        raise ValueError("Model returned an empty response.")
     text = re.sub(r"^\s*```(?:json)?\s*", "", text, flags=re.I)
     text = re.sub(r"\s*```\s*$", "", text)
     try:
@@ -109,7 +111,7 @@ def _validate(parsed: dict[str, Any]) -> dict[str, str]:
 
 def classify_record(row: dict[str, str], api_key: str) -> dict[str, Any]:
     """Classify one record. A malformed output gets one corrective retry."""
-    client = OpenAI(api_key=api_key, base_url=BASE_URL, timeout=35.0, max_retries=1)
+    client = OpenAI(api_key=api_key, base_url=BASE_URL, timeout=35.0, max_retries=0)
     payload = {
         "golden_id": row["golden_id"],
         "source_id": row["source_id"],
@@ -173,7 +175,7 @@ def build_results_csv(rows: list[dict[str, str]], results: dict[str, dict[str, A
         "ai_error", "ai_attempts", "agreement_relevance_exact",
         "agreement_journey_exact", "agreement_theme_exact", "agreement_sentiment_exact",
     ]
-    fields = list(rows[0].keys()) + [field for field in extra_fields if field not in rows[0]]
+    fields = list(dict.fromkeys(list(rows[0].keys()) + extra_fields))
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
