@@ -63,7 +63,7 @@ def _extract_json_object(raw: str) -> dict[str, Any]:
         if quoted:
             if escaped:
                 escaped = False
-            elif char == "\\\\":
+            elif char == "\\":
                 escaped = True
             elif char == '"':
                 quoted = False
