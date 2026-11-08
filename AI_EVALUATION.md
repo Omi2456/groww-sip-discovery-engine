@@ -64,7 +64,7 @@ The complete raw JSON transcript was not archived; this is a summary of the actu
 
 ## 6. Golden Set and reference-label review
 
-**Golden Set:** https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set_20.csv
+**Golden Set:** https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set.csv
 
 Twenty records were purposively selected from the 27 public discussions for topic coverage. This is not a random or representative sample.
 
@@ -81,7 +81,7 @@ Label definitions:
 
 A separate Golden Set evaluation section now appears immediately after the Research Workspace. It automatically loads the bundled 20-record CSV, sends each record individually to the configured model, retains per-record raw AI responses, supports retrying failed records during the active Streamlit session, calculates field-wise exact-match agreement against the preserved reference labels, and provides a downloadable results CSV.
 
-**Execution status:** The evaluator runs on demand in the deployed app. No evaluation result or agreement rate is claimed in this documentation until a user executes it and downloads the resulting file. The app displays live progress and the actual completed/failed counts.
+**Observed evaluation run:** A user-shared export contained 15 successful classifications and 5 failed records out of 20. Among the 15 successful records, exact-match agreement was relevance 13/15 (86.7%), journey stage 9/15 (60.0%), primary theme 1/15 (6.7%), and sentiment 14/15 (93.3%). These are observations from one run, not a stable performance estimate. The app displays live progress and the actual completed/failed counts.
 
 To execute once:
 1. Open the live Discovery Engine.
@@ -89,7 +89,7 @@ To execute once:
 3. Click “Run / resume evaluation”.
 4. Download `groww_sip_ai_evaluation_results.csv`.
 
-The evaluator uses the existing Streamlit secret `GROQ_API_KEY`; it does not display the key. Groq free-tier rate limits may apply. The AI result file must be retained as evidence.
+The evaluator uses the existing Streamlit secret `GROQ_API_KEY`; it does not display the key. Five records failed because the model returned malformed or incomplete JSON after the bounded retry. The downloaded audit file should be retained as evidence.
 
 The app calculates exact-match agreement separately for relevance, journey stage, primary theme and sentiment, with a visible denominator and mismatch list. Primary-theme agreement is literal text matching, so semantically similar wording can count as a mismatch. No combined accuracy score is presented.
 
@@ -130,6 +130,6 @@ Provider/model/API details remain in this technical evidence log and source docu
 
 - Live Discovery Engine: https://groww-sip-discovery-engine123.streamlit.app/
 - Repository: https://github.com/Omi2456/groww-sip-discovery-engine
-- Golden Set: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set_20.csv
+- Golden Set: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set.csv
 - Dataset manifest: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/dataset_manifest.json
-- AI Evidence Log: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/AI_EVIDENCE_LOG.md
+- AI Evidence Log: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/AI_EVALUATION.md
