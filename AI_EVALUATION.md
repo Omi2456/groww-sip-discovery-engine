@@ -133,3 +133,15 @@ Provider/model/API details remain in this technical evidence log and source docu
 - Golden Set: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set.csv
 - Dataset manifest: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/dataset_manifest.json
 - AI Evidence Log: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/AI_EVALUATION.md
+
+## Reference-label provenance disclosure
+
+All 20 benchmark records carry the source status `FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER`. The reference labels were friend-reviewed as reported by the project owner. This status does not independently establish verification by an external annotator, an independent expert, or a formal inter-rater process. The labels are retained as supplied and have not been relabelled to improve agreement. Treat benchmark agreement as comparison against these reported reference labels, not an independently validated ground truth.
+
+## Failed records in the inspected evaluation export
+
+The inspected run had 15 successful classifications and five failed records: GS06, GS10, GS11, GS17 and GS19. Each failed after two attempts because the model did not return valid, complete JSON for the required schema. Failed records were excluded from field-level agreement denominators; they must remain visible in the audit export and must not be counted as successful predictions. This is an observation from that run, not a claim that later runs will fail on the same records.
+
+## Evaluation export column hygiene
+
+The evaluation exporter now constructs a de-duplicated header list so a source CSV column and an appended evaluation field cannot create duplicate header names. The bundled `golden_set.csv` has one source/reference field set; it retains legacy blank AI/audit columns as part of the original benchmark. The downloadable evaluation export should be checked after a fresh run to confirm that each AI prediction field appears exactly once and contains the corresponding current prediction.
