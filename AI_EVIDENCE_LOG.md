@@ -3,193 +3,123 @@
 **Prepared:** 8 November 2026  
 **Repository:** https://github.com/Omi2456/groww-sip-discovery-engine  
 **Branch:** `ai-discovery-gemini`  
-**Live Discovery Engine:** https://groww-sip-discovery-engine123.streamlit.app/  
-**Status:** Discovery workflow and one Groq synthesis test documented. Golden Set contains 20 assistant-proposed reference labels; independent human validation and per-record AI classification have not been completed. Agreement is not measured.
+**Live Discovery Engine:** https://groww-sip-discovery-engine123.streamlit.app/
 
-> **Scope and integrity note:** This log distinguishes (a) functionality verified in the code, (b) prompts available in the deployed app, (c) the one user-reported Groq test whose output was shared in the project conversation, and (d) evaluation work that remains incomplete. It does not claim that every preset prompt was executed or that an AI accuracy score was measured.
+## 1. Project purpose
 
-## 1. Project purpose and AI role
+The Discovery Engine supports product discovery for Groww's SIP-retention challenge: understand customer-reported friction that may affect whether first-time mutual-fund SIP investors continue. The business outcome is an active SIP 12 months after first SIP start, defined as at least one successful instalment in the last 30 days.
 
-The Discovery Engine supports product discovery for Groww's SIP-retention challenge: understand customer-reported friction that may affect whether first-time mutual-fund SIP investors continue. The business outcome of interest is an active SIP 12 months after the first SIP starts, where active means at least one successful instalment in the last 30 days.
+## 2. Sources and volume
 
-The application combines:
-- Deterministic BM25 retrieval and query expansion to find relevant feedback.
-- Deterministic theme-counting over the retrieved records.
-- Optional Groq-assisted synthesis that interprets only the top five retrieved excerpts for the current question.
+The bundled discovery corpus contains 3,300 records:
+- **3,273 Groww app-review candidates** containing the literal term “SIP”, extracted from a larger 322,726-row Hugging Face export.
+- **27 source-linked public discussions**, primarily Reddit.
 
-Groq does not search the entire corpus directly, independently validate customer claims, calculate the displayed theme counts, or establish 12-month retention outcomes.
-
-## 2. Data sources, volume and provenance
-
-The deployed app's bundled corpus contains **3,300 records**:
-
-| Source | Records | How used | Traceability |
-|---|---:|---|---|
-| Groww app-review candidate subset | 3,273 | Keyword-screened records containing the literal term “SIP” | Original review IDs retained; no verified individual Google Play review URLs in the downloaded source |
-| Public discussions | 27 | Source-linked Reddit discussions | Direct Reddit URLs retained |
-| **Total** | **3,300** | Discovery corpus | See manifest and CSVs |
-
-### Source links
-- Original Groww reviews dataset: https://huggingface.co/datasets/Avaneeshkarthik/groww-app-reviews
-- Dataset manifest: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/dataset_manifest.json
-- Groww review candidates: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_explicit_candidates.csv
+Links:
+- Original dataset: https://huggingface.co/datasets/Avaneeshkarthik/groww-app-reviews
+- Manifest: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/dataset_manifest.json
+- Groww candidates: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_explicit_candidates.csv
 - Public discussions: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_reddit_pilot.csv
-- Combined evidence export: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_discovery_evidence.csv
+- Combined evidence: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_discovery_evidence.csv
 - Dataset assessment: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/DATASET_ASSESSMENT.md
 - Public discussion assessment: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/PUBLIC_DISCUSSION_ASSESSMENT.md
 
-### Important dataset limitations
+**Limitations:** The 3,273 records are keyword candidates, not individually verified SIP experiences. Their source export has original IDs but no verified individual Google Play review URLs. Reddit posts are self-selected, self-reported and do not establish prevalence or causality.
 
-The source Hugw Face export contained 322,726 raw reviews dated 28 September 2020 to 26 September 2025. The app uses 3,273 records containing “SIP”; these are keyword candidates, not individually human-verified SIP experiences. The export contains review IDs but no per-review Google Play URL or app/package ID field. The 27 Reddit URLs lead to public discussion pages, but author claims are self-reported and not independently verified. The public discussion corpus is self-selected and not representative of Groww investors.
+## 3. Research questions available in the app
 
-## 3. Discovery questions available in the app
+The app contains these six preset questions. They are documented as available prompts; not all are claimed to have been executed.
 
-The deployed application contains six preset research questions. These are the prompts offered by the interface; this log does not claim all six were executed.
+1. “What reasons do Groww reviewers give for pausing, reducing, or stopping an SIP?”
+2. “What problems do reviewers report with AutoPay, mandates, or SIP debits?”
+3. “What do reviewers say when their SIP payment, order status, or mutual fund units are unclear?”
+4. “What do users do outside Groww when they’re unsure whether an SIP payment went through?”
+5. “Are there positive SIP experiences that differ from the problem reports?”
+6. “Can these reviews tell us what separates investors with an active SIP after 12 months from those who stop?”
 
-1. **Pausing/reducing/stopping:** “What reasons do Groww reviewers give for pausing, reducing, or stopping an SIP?”
-2. **AutoPay and mandates:** “What problems do reviewers report with AutoPay, mandates, or SIP debits?”
-3. **Payment and allocation status:** “What do reviewers say when their SIP payment, order status, or mutual fund units are unclear?”
-4. **Off-platform behaviour:** “What do users do outside Groww when they’re unsure whether an SIP payment went through?”
-5. **Positive counterexamples:** “Are there positive SIP experiences that differ from the problem reports?”
-6. **12-month retention data gap:** “Can these reviews tell us what separates investors with an active SIP after 12 months from those who stop?”
-
-The sixth prompt is intentionally framed as a data-gap check. The app warns that public reviews do not follow the same investors over time and cannot establish who remained active after 12 months.
+The sixth prompt is a data-gap check. Public reviews do not follow the same investors over time and cannot establish who remained active after 12 months.
 
 ## 4. Recorded Groq interaction
 
-### Interaction 01 — AutoPay, missed instalments and payment failures
+**Interaction 01 — AutoPay, missed instalments and payment failures**
 
-**Execution status:** User ran this question in the deployed app and shared the resulting output in the project conversation.
+- Question entered: “What problems do investors experience with SIP AutoPay, missed instalments and payment failures?”
+- User-shared app result: five evidence examples retrieved (one public discussion, four Groww app reviews).
+- Deterministic theme counts shown: AutoPay/mandate 5 of 5; payment/debit 3 of 5; pausing/cancellation 1 of 5.
+- Groq synthesis identified reported issues around AutoPay options, debit-priority confusion and mandate-status uncertainty, and proposed related opportunity hypotheses.
+- Critical review: these examples must be described as individual reported experiences, not verified product-wide limitations or prevalence. Feature suggestions remain hypotheses pending product verification and user validation.
 
-**Question entered:**
-“What problems do investors experience with SIP AutoPay, missed instalments and payment failures?”
-
-**Retrieval shown by the app:**
-- 5 evidence examples retrieved.
-- 1 public discussion and 4 Groww app reviews.
-- Theme counts within those five retrieved examples: AutoPay/mandate 5 of 5; payment/debit 3 of 5; pausing/cancellation 1 of 5.
-- Representative feedback included a request for easier manual SIP transaction / e-mandate options.
-
-**Groq output as reported from the user's app test:**
-- Described limited AutoPay options as a possible friction point.
-- Described debit-priority confusion as another possible friction point.
-- Described mandate-status and pause/delete uncertainty.
-- Suggested hypotheses around mandate options, debit priority, and clearer mandate status/control.
-- Included evidence references R01–R05 and limitations.
-
-**Interpretation and decision:**
-Treat these as reported experiences and hypotheses, not verified statements about Groww's current product capabilities or the prevalence of a problem. The five retrieved examples are a small, query-selected subset. Before prioritising a proposed feature, verify current product behaviour and validate the need with investors.
-
-**Evidence status:** The user shared a screenshot of the deployed app showing Groq-generated synthesis, and separately pasted the retrieval counts and a summary of the response. The complete raw JSON response was not archived in this repository. Therefore, this is a documented interaction summary, not a verbatim full model transcript.
+The complete raw JSON transcript was not archived; this is a summary of the actual test output shared by the project owner, not a verbatim transcript.
 
 ## 5. AI configuration and safeguards
 
 - Provider: Groq
-- Model configured in code: `openai/gpt-oss-20b`
-- API base URL: `https://api.groq.com/openai/v1`
+- Model: `openai/gpt-oss-20b`
+- API base: `https://api.groq.com/openai/v1`
 - SDK: OpenAI-compatible Python SDK
-- Secret name: `GROQ_API_KEY`, stored in Streamlit secrets
-- Retrieved context passed to Groq: at most five excerpts for the current question
-- Response format: JSON object
-- Maximum completion tokens configured: 900
-- Request timeout: 25 seconds; one retry configured
+- Secret: `GROQ_API_KEY`, stored in Streamlit secrets
+- Discovery synthesis sees at most the top five retrieved excerpts.
+- The synthesis prompt instructs the model not to invent counts, prevalence, causes, capabilities or retention outcomes, and validates cited evidence IDs against the supplied set.
+- Retrieval and theme counts are deterministic; Groq generates interpretation.
 
-The prompt instructs the model to use only supplied excerpts, not invent counts, prevalence, causes, product capabilities or retention outcomes, cite only evidence IDs supplied by the app, state limitations, and frame opportunities as hypotheses. Returned evidence IDs are filtered against the IDs provided to the model.
+## 6. Golden Set and reference-label review
 
-## 6. Golden Set: selection and provisional coding
+**Golden Set:** https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set_20.csv
 
-**Golden Set file:** https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set_20.csv
+Twenty records were purposively selected from the 27 public discussions for topic coverage. This is not a random or representative sample.
 
-Twenty records were purposively selected from the 27 source-linked public discussions to cover positive experiences, setup, step-up, pausing, AutoPay, payment failures, status visibility, allocation and adjacent/general SIP questions. The selection is for qualitative coverage, not random sampling or statistical representation.
+The CSV contains source text, source URL, source scope, and proposed relevance, journey-stage, theme, sentiment, impact and rationale labels.
 
-The CSV includes the original source ID, URL, displayed date, subreddit, source scope, source-verification note and full feedback text. It also includes proposed labels for relevance, journey stage, theme, sentiment, impact/workaround and rationale.
+**Human-review provenance:** The project owner reports that a friend reviewed the 20 proposed labels and said they were correct. The reviewer’s identity is withheld. This log records that as a project-owner-reported review; the review itself has not been independently witnessed or audited by the system. The original labels were first proposed by ChatGPT. The CSV marks the status as `FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER`, not as a formal external audit.
 
-### Label definitions
+Label definitions:
+- Relevance: Explicit SIP; Adjacent SIP; Not relevant.
+- Journey stage: Discover/Choose; Setup/Start; Pay/AutoPay; Manage/Pause/Cancel; Track/Status/Allocation; Change/Step-up; Withdraw/Sell; Other/Unclear.
+- Sentiment: Positive; Negative; Mixed; Neutral/Question.
 
-- **Relevance:** Explicit SIP; Adjacent SIP; Not relevant.
-- **Journey stage:** Discover/Choose; Setup/Start; Pay/AutoPay; Manage/Pause/Cancel; Track/Status/Allocation; Change/Step-up; Withdraw/Sell; Other/Unclear.
-- **Sentiment:** Positive; Negative; Mixed; Neutral/Question.
-- **Impact/workaround:** only what the author explicitly reported; otherwise state that it was not stated.
-- **Rationale:** concise explanation grounded in the record.
+## 7. Groq per-record classification and agreement
 
-### Annotation provenance
+A separate Golden Set evaluator has been added to the Streamlit app in the expander **“Golden Set evaluation — run Groq classification on 20 records”**. It sends each of the 20 records individually to Groq using a fixed classification prompt and the same configured model. It produces a downloadable CSV with per-record AI labels and raw model outputs.
 
-The 20 labels were proposed by ChatGPT GPT-6 after reviewing the source text. They were **not independently hand-labelled or approved by the project owner**. Every row is explicitly marked `ASSISTANT_PROPOSED_NOT_HUMAN_REVIEWED`; the annotator field identifies ChatGPT. These labels are provisional reference coding, not validated human ground truth.
+**Execution status:** The evaluator code is committed, but it has not yet been run in the deployed Streamlit session. Therefore, no AI labels, agreement rate or classifier performance are claimed yet.
 
-### Provisional distributions
+To execute once:
+1. Open the live Discovery Engine.
+2. Expand “Golden Set evaluation — run Groq classification on 20 records”.
+3. Click “Run Groq classification on Golden Set (20 records)”.
+4. Download `groq_golden_set_results.csv`.
 
-Under the assistant-proposed labels:
-- Relevance: 18 Explicit SIP; 2 Adjacent SIP.
-- Sentiment: 2 Positive; 12 Negative; 3 Mixed; 3 Neutral/Question.
-- Journey stage: Setup/Start 2; Pay/AutoPay 3; Manage/Pause/Cancel 3; Track/Status/Allocation 7; Change/Step-up 4; Other/Unclear 1.
+The evaluator uses the existing Streamlit secret `GROQ_API_KEY`; it does not display the key. Groq free-tier rate limits may apply. The AI result file must be retained as evidence.
 
-These counts describe only the selected 20 records and are not market estimates.
+After the result CSV is available, calculate exact-match agreement separately for relevance, journey stage and sentiment. Theme agreement should be reviewed separately because themes are free-text labels; normalize or adjudicate theme equivalence before scoring. Report the denominator and disagreements. Do not combine fields into a single accuracy number without a declared method.
 
-## 7. AI agreement evaluation
+## 8. Three AI output corrections / rejections
 
-**Status: Not completed. No agreement score is available.**
+One actual Groq synthesis interaction has been reviewed. Three distinct audit observations can be drawn from that same output, but they are not three separate model runs:
 
-The deployed Groq feature performs retrieval-grounded synthesis of up to five records for a research question. It is not currently a per-record classifier that returns the same relevance, journey-stage, theme and sentiment labels for all 20 Golden Set records.
+1. **AutoPay capability generalisation:** qualify any implication that a payment method is universally unavailable. The retrieved comments establish reported experiences, not current product-wide capability.
+2. **Debit priority as a feature request:** retain as an unvalidated opportunity hypothesis, not established demand.
+3. **Mandate changes as a solution:** do not recommend implementation until current product behaviour and investor demand are verified.
 
-The `ai_*` fields in the Golden Set are intentionally blank. No exact-match agreement, classifier accuracy, or overall score is claimed.
-
-A valid evaluation would require:
-1. Independent human review/adjudication of the 20 reference labels.
-2. A fixed per-record classification prompt and model configuration.
-3. Captured raw AI output for each of the 20 records.
-4. Field-wise comparison for relevance, journey stage, theme and sentiment.
-5. Disagreement review and a documented calculation method.
-
-Because the current reference labels are assistant-proposed and unreviewed, even a future model comparison against them should be described as exploratory until an independent human reviewer validates the labels.
-
-## 8. AI output audit: correction and rejection principles
-
-The recorded AutoPay interaction supports the following audit observations. These are **three review decisions about the same recorded synthesis**, not three separate model runs or three independently captured model failures.
-
-| AI interpretation / risk | Human-review decision | Reason |
-|---|---|---|
-| A few comments may imply that certain AutoPay options are unavailable generally | Qualify as “some users reported difficulty/options limitations” | A small set of comments cannot verify current product-wide capability or prevalence |
-| Debit-priority behaviour was proposed as a product opportunity | Retain only as an unvalidated hypothesis | The evidence shows a reported preference/concern, not validated demand or feasibility |
-| New mandate options were suggested as a solution | Do not treat as a recommendation ready for prioritisation | Existing product behaviour must first be checked and investor demand validated |
-
-These observations demonstrate critical review of the shared synthesis. They should not be presented as three separate corrected outputs. No other raw model outputs were supplied or archived, so additional correction examples are not fabricated.
+These are three separate review decisions about one captured synthesis, not three independently captured model failures. No other raw AI outputs are claimed. To satisfy a strict requirement for three separately captured corrections, run and save three additional distinct research-question outputs and record a real correction only where the output warrants it.
 
 ## 9. What the evidence can and cannot establish
 
-**Can support:**
-- Discovery of customer-reported friction themes.
-- Retrieval of source-linked public discussion examples.
-- Hypothesis generation for interviews and product exploration.
-- Identification of information gaps in the available dataset.
+Can support discovery of reported friction themes, evidence retrieval, hypothesis generation and identification of research gaps.
 
-**Cannot establish:**
-- How common an issue is among all Groww investors.
-- That a reported issue was caused by Groww.
-- That a proposed feature will improve SIP retention.
-- Which users remained active after 12 months.
-- Causal drivers of churn or long-term retention.
+Cannot establish issue prevalence, causality, 12-month continuation, churn drivers or that a proposed feature will improve retention. Public comments are not a longitudinal cohort.
 
-The 20-record Reddit sample is small and purposive. The 3,273 Groww review candidates are keyword-filtered, not semantically validated. Public posts are self-selected and self-reported.
+## 10. Next actions
 
-## 10. Key learnings and next steps
-
-1. AI synthesis is useful for organising retrieved feedback and generating hypotheses, but source-level checking is essential.
-2. A cited evidence ID improves traceability but does not independently prove the claim.
-3. Deterministic retrieval/counting should be distinguished from generative AI interpretation.
-4. A Golden Set requires independent human reference labels and actual model outputs before agreement can be reported.
-5. Retention measurement requires a longitudinal cohort with SIP start date and subsequent active/paused/stopped status, supplemented by qualitative interviews.
+1. Run the new Golden Set evaluator in the live app and save its CSV output.
+2. Review field-wise agreement and disagreements against the friend-reviewed reference labels; retain the reviewer provenance as project-owner-reported.
+3. Capture three distinct AI interactions and document any actual corrections/rejections. If an output is sound, do not invent a correction.
+4. Keep survey/interview findings from the separate primary research distinct from public desk-research signals.
 
 ## 11. Project links
 
 - Live Discovery Engine: https://groww-sip-discovery-engine123.streamlit.app/
-- GitHub repository: https://github.com/Omi2456/groww-sip-discovery-engine
-- Working branch: `ai-discovery-gemini`
+- Repository: https://github.com/Omi2456/groww-sip-discovery-engine
+- Golden Set: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set_20.csv
 - Dataset manifest: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/dataset_manifest.json
-- Groww review candidate CSV: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_explicit_candidates.csv
-- Reddit pilot CSV: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_reddit_pilot.csv
-- Combined evidence CSV: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/groww_sip_discovery_evidence.csv
-- Golden Set CSV: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/golden_set_20.csv
-- Dataset assessment: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/DATASET_ASSESSMENT.md
-- Public discussion assessment: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/PUBLIC_DISCUSSION_ASSESSMENT.md
-
-**Submission note:** This log documents the AI-assisted discovery workflow and its current evidence status. It does not claim a completed human-vs-AI accuracy evaluation. If the rubric requires a measured agreement rate and two or three separately captured corrections, those items remain outstanding and should not be marked complete until the underlying records exist.
+- AI Evidence Log: https://github.com/Omi2456/groww-sip-discovery-engine/blob/ai-discovery-gemini/AI_EVIDENCE_LOG.md
