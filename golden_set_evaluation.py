@@ -22,6 +22,29 @@ TAXONOMY = {
         "Track/Status/Allocation", "Change/Step-up", "Withdraw/Sell", "Other/Unclear",
     ],
     "sentiment": ["Positive", "Negative", "Mixed", "Neutral/Question"],
+    "primary_theme": [
+        "Positive ease of use and SIP controls",
+        "Mandate remains active after SIP cancellation",
+        "Pause and penalty uncertainty",
+        "Step-up start-date mismatch",
+        "SIP payment error",
+        "External transaction history missing in Groww",
+        "Step-up interval does not match desired timing",
+        "Positive overall SIP experience",
+        "First SIP instalment failure and registration uncertainty",
+        "Unit allocation status discrepancy",
+        "SOA versus demat folio uncertainty",
+        "Auto-debit failure and bank penalty",
+        "Allocated units missing from Groww dashboard",
+        "SIP increase constrained by step-up and demat concerns",
+        "General question about skipping SIP instalments",
+        "Perceived demat conversion and opt-out difficulty",
+        "SIP amount and list visibility discrepancy",
+        "Partial AutoPay failure across funds",
+        "AMC and Groww SIP status mismatch",
+        "Unit allocation delay after AutoPay debit",
+        "Other/Unclear",
+    ],
 }
 PROMPT_VERSION = "golden-set-classifier-v2"
 
@@ -104,6 +127,8 @@ def _validate(parsed: dict[str, Any]) -> dict[str, str]:
         raise ValueError("Invalid journey-stage label: " + cleaned["journey_stage"])
     if cleaned["sentiment"] not in TAXONOMY["sentiment"]:
         raise ValueError("Invalid sentiment label: " + cleaned["sentiment"])
+    if cleaned["primary_theme"] not in TAXONOMY["primary_theme"]:
+        raise ValueError("Invalid primary-theme label: " + cleaned["primary_theme"])
     if len(cleaned["primary_theme"]) > 120 or len(cleaned["rationale"]) > 600:
         raise ValueError("Theme or rationale exceeded the allowed length.")
     return cleaned
@@ -126,8 +151,9 @@ def classify_record(row: dict[str, str], api_key: str) -> dict[str, Any]:
         "Allowed relevance: " + " | ".join(TAXONOMY["relevance"]) + ".\n"
         "Allowed journey_stage: " + " | ".join(TAXONOMY["journey_stage"]) + ".\n"
         "Allowed sentiment: " + " | ".join(TAXONOMY["sentiment"]) + ".\n"
-        "A question seeking help may be Neutral/Question. Preserve mixed sentiment when the "
-        "author reports both a problem and a resolution. Keep primary_theme concise.\n"
+        "Allowed primary_theme: " + " | ".join(TAXONOMY["primary_theme"]) + ". Choose the closest "
+        "supported category exactly; use Other/Unclear when none fits. A question seeking help "
+        "may be Neutral/Question. Preserve Mixed when both problem and resolution are reported.\n"
         "Record: " + json.dumps(payload, ensure_ascii=False)
     )
     last_raw = ""
