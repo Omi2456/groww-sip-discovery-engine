@@ -1,7 +1,7 @@
-"""Fast evidence-first Groww SIP discovery app.
+"""Evidence-first Groww SIP discovery app with separate research and evaluation workspaces.
 
-Uses a local BM25 text-ranking index and structured, evidence-led summaries.
-No Ollama server, neural model download, LLM API, or API key is required.
+BM25 retrieval works without an API key. AI interpretation and Golden Set evaluation
+use the configured API secret; custom CSV exploration is isolated from both.
 """
 from __future__ import annotations
 
