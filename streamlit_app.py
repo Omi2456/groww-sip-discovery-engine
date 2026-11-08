@@ -335,39 +335,30 @@ def summary(question: str, matches: list[dict], total_matches: int) -> str:
     return "\n".join(lines)
 
 
-if "gemini_analysis" not in st.session_state:
-    st.session_state.gemini_analysis = None
-if "gemini_analysis_question" not in st.session_state:
-    st.session_state.gemini_analysis_question = ""
-if "current_result" not in st.session_state:
-    st.session_state.current_result = None
-if "pending_question" not in st.session_state:
-    st.session_state.pending_question = ""
-if "question" not in st.session_state:
-    st.session_state.question = ""
+# App state
+for state_key, default in {
+    "ai_analysis": None,
+    "ai_analysis_question": "",
+    "current_result": None,
+    "pending_question": "",
+    "question": "",
+    "golden_eval_results": {},
+    "custom_result": None,
+    "custom_pending_question": "",
+}.items():
+    if state_key not in st.session_state:
+        st.session_state[state_key] = default
 
 with st.sidebar:
     st.markdown("## ✳ Groww SIP Discovery")
-    st.caption("AI Discovery Engine · customer evidence")
+    st.caption("Customer research workspace")
     if st.button("＋ New research", use_container_width=True):
         st.session_state.current_result = None
-        st.session_state.gemini_analysis = None
-        st.session_state.gemini_analysis_question = ""
+        st.session_state.ai_analysis = None
+        st.session_state.ai_analysis_question = ""
         st.session_state.pending_question = ""
         st.session_state.question = ""
         st.rerun()
-    st.markdown("#### Upload your feedback CSV")
-    st.caption("Try the engine with your own reviews. Upload is optional.")
-    st.markdown("<div class='upload-box'><b>Choose or drop a CSV</b><br><span class='small-muted'>Text column: user_statement, content, text, or review.</span></div>", unsafe_allow_html=True)
-    uploaded = st.file_uploader("Choose a CSV", type=["csv"], help="Up to 20 MB. Text column: user_statement, content, text, or review. Avoid sensitive personal information.")
-    try:
-        custom_rows = upload_rows(uploaded)
-        if uploaded:
-            st.success(f"Loaded {len(custom_rows):,} feedback rows for this browser session")
-    except (ValueError, UnicodeError) as exc:
-        custom_rows = []
-        st.error(str(exc))
-    st.caption("Your uploaded feedback stays in this browser session.")
     st.markdown("#### Research questions")
     for i, prompt in enumerate(PROMPTS):
         if st.button(prompt, key=f"prompt_{i}", use_container_width=True):
@@ -377,95 +368,118 @@ with st.sidebar:
 
 main, right = st.columns([2.7, 1.2], gap="large")
 with main:
-    st.markdown("<div class='hero'><h1>Groww SIP Discovery</h1><p>Explore customer feedback, spot recurring friction, and inspect the evidence behind each finding.</p></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='hero'><h1>Groww SIP Discovery</h1>"
+        "<p>Find patterns in customer feedback, inspect the evidence, and turn signals into research hypotheses.</p></div>",
+        unsafe_allow_html=True,
+    )
     try:
         app_n = sum(bool((row.get("content") or "").strip()) for row in read_csv(str(APP_REVIEWS_PATH)))
         public_n = sum(bool((row.get("content") or "").strip()) for row in read_csv(str(REDDIT_PATH)))
-        st.caption(f"Evidence available: {app_n:,} Groww review records · {public_n} source-linked public discussions" + (f" · {len(custom_rows):,} uploaded records" if custom_rows else ""))
+        st.caption(f"Research corpus · {app_n:,} Groww review candidates · {public_n} source-linked public discussions")
     except (OSError, csv.Error) as exc:
-        st.error(f"Could not load the bundled evidence files: {exc}")
-    question_from_form = ""
+        st.error(f"Could not load the bundled research data: {exc}")
+
+    st.markdown("## 1. Research workspace")
+    st.caption("Start with a question. Results stay grounded in the bundled research corpus.")
     with st.form("question_form", clear_on_submit=False):
-        typed = st.text_input("Ask a research question", key="question", placeholder="Ask about SIP setup, AutoPay, missed payments, pausing, or redemption…")
-        submitted = st.form_submit_button("Find evidence and summarize", use_container_width=True)
-        if submitted:
-            question_from_form = typed.strip()
-    if question_from_form:
-        st.session_state.pending_question = question_from_form
+        typed = st.text_input(
+            "Research question", key="question",
+            placeholder="e.g. What makes SIP AutoPay failures difficult to resolve?",
+        )
+        submitted = st.form_submit_button("Find evidence", use_container_width=True)
+    if submitted:
+        st.session_state.pending_question = typed.strip()
         st.session_state.current_result = None
+        st.session_state.ai_analysis = None
+
     if st.session_state.pending_question:
         pending = st.session_state.pending_question
         if len(pending) > 500:
             st.error("Keep the question under 500 characters.")
+            st.session_state.pending_question = ""
         elif not pending:
-            st.info("Type a research question first.")
+            st.info("Enter a research question to begin.")
+            st.session_state.pending_question = ""
         else:
             try:
-                results, count = retrieve(pending, custom_rows)
-                answer = summary(pending, results, count)
-                st.session_state.current_result = {"question": pending, "answer": answer, "matches": results, "count": count}
+                with st.spinner("Searching the bundled evidence…"):
+                    results, count = retrieve(pending, [])
+                    answer = summary(pending, results, count)
+                    st.session_state.current_result = {
+                        "question": pending, "answer": answer, "matches": results, "count": count,
+                    }
                 st.session_state.pending_question = ""
-                st.rerun()
             except Exception as exc:
                 st.error(f"Evidence search could not complete: {exc}")
+                st.session_state.pending_question = ""
+
     result = st.session_state.current_result
     if result:
-        st.markdown("### Discovery brief")
-        st.markdown(f"<div class='question-card'><span>RESEARCH QUESTION</span><strong>{html.escape(result['question'])}</strong></div>", unsafe_allow_html=True)
         matches = result["matches"]
-        asks_retention = bool(re.search(r"\b(12\s*months?|12-month|one year|retention|churn|stay(?:ing)? active|active sip after)\b", result["question"], re.I))
-        asks_positive_comparison = bool(re.search(r"\bpositive\b|\bdiffer\b|\bproblem reports\b", result["question"], re.I))
+        st.markdown("### Discovery brief")
+        st.markdown(
+            f"<div class='question-card'><span>RESEARCH QUESTION</span><strong>{html.escape(result['question'])}</strong></div>",
+            unsafe_allow_html=True,
+        )
+        asks_retention = bool(re.search(
+            r"\b(12\s*months?|12-month|one year|retention|churn|stay(?:ing)? active|active sip after)\b",
+            result["question"], re.I,
+        ))
         if asks_retention:
-            st.warning("Evidence limit: these reviews and public discussions do not track the same investors over time or report each person's SIP status after 12 months. They cannot show what separates retained investors from those who stop. The examples below are adjacent qualitative signals only.")
+            st.warning(
+                "Evidence limit: these reviews and public discussions do not follow the same investors over time. "
+                "They cannot establish who retained an active SIP after 12 months."
+            )
         app_matches = sum(row.get("_kind") == "app" for row in matches)
         public_matches = sum(row.get("_kind") == "public" for row in matches)
-        custom_matches = sum(row.get("_kind") == "custom" for row in matches)
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Evidence examples", len(matches))
-        m2.metric("Public discussions", public_matches)
-        m3.metric("Groww reviews / uploads", app_matches + custom_matches)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Evidence examples", len(matches))
+        c2.metric("Public discussions", public_matches)
+        c3.metric("Groww review candidates", app_matches)
         if matches:
             themes = theme_counts(matches)
             if themes:
-                st.markdown("#### Patterns in the retrieved examples")
+                st.markdown("#### Patterns in these results")
                 theme_cols = st.columns(min(3, len(themes)))
                 for i, (label, count) in enumerate(themes):
-                    theme_cols[i % len(theme_cols)].metric(label, f"{count} of {len(matches)}")
-                st.caption("A record can appear in more than one theme. These counts describe only the examples shown.")
+                    theme_cols[i % len(theme_cols)].metric(label, f"{count} / {len(matches)}")
+                st.caption("A record can appear in more than one theme. Counts describe only the retrieved examples.")
             first = matches[0]
-            source_kind = {"app": "Groww app review", "public": "Public discussion", "custom": "Uploaded feedback"}.get(first.get("_kind"), "Feedback record")
+            source_kind = {"app": "Groww app review", "public": "Public discussion"}.get(first.get("_kind"), "Feedback")
             quote = html.escape(re.sub(r"\s+", " ", first.get("content", "")).strip())
             st.markdown("#### Representative feedback")
-            st.markdown(f"<div class='quote-card'>“{quote}”<br><span class='small-muted'><b>R01</b> · {source_kind}</span></div>", unsafe_allow_html=True)
-            if themes and themes[0][0] in OPPORTUNITIES and not asks_retention and not asks_positive_comparison:
+            st.markdown(
+                f"<div class='quote-card'>“{quote}”<br><span class='small-muted'><b>R01</b> · {source_kind}</span></div>",
+                unsafe_allow_html=True,
+            )
+            if themes and themes[0][0] in OPPORTUNITIES and not asks_retention:
                 st.markdown("#### Opportunity to investigate")
                 st.info(OPPORTUNITIES[themes[0][0]])
-                st.caption("A hypothesis suggested by these examples—not a validated solution. Test it with users before prioritizing.")
-            elif asks_retention:
-                st.markdown("#### Data gap to close")
-                st.info("To compare SIP continuation after 12 months, link a consented cohort's start date to later active, paused, or stopped status, then validate the reasons through interviews.")
+                st.caption("A hypothesis from these examples, not a validated solution.")
         else:
             st.info(result["answer"])
-        st.markdown("### Groq-assisted interpretation")
-        st.caption("Optional AI analysis of only the retrieved excerpts shown above. Evidence IDs are checked against this result set; AI interpretations still require human review.")
-        if st.button("Analyze retrieved evidence with Groq", key="run_groq_analysis", use_container_width=True):
+
+        st.markdown("### AI-assisted interpretation")
+        st.caption("Generate a concise interpretation of the retrieved excerpts, with references checked against the evidence shown.")
+        if st.button("Generate AI insights", key="generate_ai_insights", use_container_width=True):
             try:
                 api_key = st.secrets.get("GROQ_API_KEY", "")
             except Exception:
                 api_key = ""
             if not api_key:
-                st.warning("Groq is not configured yet. Add GROQ_API_KEY to Streamlit Community Cloud → App → Settings → Secrets. Never put the key in GitHub code.")
+                st.warning("AI insights are not configured. Add the API secret in your app hosting settings.")
             elif not matches:
-                st.info("Run a search that returns evidence before requesting AI analysis.")
+                st.info("Run a research question that returns evidence before generating AI insights.")
             else:
                 try:
-                    with st.spinner("Groq is reviewing the retrieved evidence…"):
-                        st.session_state.gemini_analysis = analyze_with_groq(result["question"], matches, api_key)
-                        st.session_state.gemini_analysis_question = result["question"]
+                    with st.spinner("Generating insights from the retrieved evidence…"):
+                        st.session_state.ai_analysis = analyze_with_groq(result["question"], matches, api_key)
+                        st.session_state.ai_analysis_question = result["question"]
                 except Exception as exc:
-                    st.error(f"Groq analysis could not complete. The evidence search still works. Details: {exc}")
-        if st.session_state.gemini_analysis and st.session_state.gemini_analysis_question == result["question"]:
-            ai = st.session_state.gemini_analysis
+                    st.error(f"AI interpretation could not complete. Evidence search is still available. Details: {exc}")
+        if st.session_state.ai_analysis and st.session_state.ai_analysis_question == result["question"]:
+            ai = st.session_state.ai_analysis
             st.markdown("#### AI-generated synthesis")
             st.write(ai.get("summary", ""))
             for item in ai.get("themes", []):
@@ -486,47 +500,211 @@ with main:
                 st.markdown("**Suggested interview questions**")
                 for question in ai["interview_questions"]:
                     st.write("• " + question)
-            st.caption("AI output is a research aid, not a verified finding. Counts are calculated by the app, not generated by the AI model. Review every cited excerpt before using an insight.")
-        st.caption("These records are discovery signals, not a representative sample or proof of cause.")
-
-        with st.expander("Golden Set evaluation — run Groq classification on 20 records"):
-            st.caption("Separate evaluation workflow. This sends each of the 20 source texts to Groq once and produces a downloadable AI-label CSV. It does not alter the discovery corpus or calculate agreement.")
-            if st.button("Run Groq classification on Golden Set (20 records)", key="run_golden_eval"):
-                try:
-                    evaluation_key = st.secrets.get("GROQ_API_KEY", "")
-                except Exception:
-                    evaluation_key = ""
-                if not evaluation_key:
-                    st.error("GROQ_API_KEY is not configured in Streamlit secrets.")
-                else:
-                    try:
-                        from golden_set_evaluation import classify_golden_set
-                        with open("golden_set_20.csv", "r", encoding="utf-8-sig", newline="") as source_file:
-                            golden_text = source_file.read()
-                        with st.spinner("Classifying 20 records with Groq. This may take a minute…"):
-                            ai_csv, ai_meta = classify_golden_set(golden_text, evaluation_key)
-                        st.session_state["golden_eval_csv"] = ai_csv
-                        st.session_state["golden_eval_meta"] = ai_meta
-                    except Exception as exc:
-                        st.error(f"Golden Set classification failed: {exc}")
-            if st.session_state.get("golden_eval_csv"):
-                st.success("Groq returned classifications for the Golden Set.")
-                st.json(st.session_state.get("golden_eval_meta", {}))
-                st.download_button("Download Groq Golden Set results CSV", st.session_state["golden_eval_csv"],
-                    file_name="groq_golden_set_results.csv", mime="text/csv", key="download_golden_eval")
-
-
+            st.caption("AI output is a research aid, not a verified finding. Counts are calculated by the app, not generated by AI.")
+        st.caption("Public feedback is self-selected and self-reported; these examples are not a representative sample or proof of cause.")
     else:
-        st.markdown("<div class='empty-state'><div class='empty-icon'>✳</div><h3>Start with a research question</h3><p>Upload your feedback from the left, choose a prompt, or ask about a specific SIP experience. Matching evidence and source links will appear here.</p></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='empty-state'><div class='empty-icon'>✳</div><h3>Start with a research question</h3>"
+            "<p>Ask about SIP setup, AutoPay, missed payments, pausing, cancellation or unit allocation. "
+            "The workspace will show matched evidence and source references.</p></div>",
+            unsafe_allow_html=True,
+        )
+
+    # Core evaluation follows the primary research workflow and always reads the bundled file.
+    st.markdown("---")
+    st.markdown("## 2. Golden Set evaluation")
+    st.caption("A fixed 20-record benchmark for checking how consistently AI labels customer feedback. It is separate from research searches and custom uploads.")
+    from golden_set_evaluation import (
+        build_results_csv, calculate_agreement, classify_record,
+        evaluation_metadata, load_golden_set,
+    )
+    try:
+        golden_rows = load_golden_set(str(ROOT / "golden_set_20.csv"))
+        st.markdown(
+            f"<div class='source-card'><b>Fixed evaluation set</b><br>"
+            f"<span class='small-muted'>{len(golden_rows)} bundled records · reference labels preserved · no upload required</span></div>",
+            unsafe_allow_html=True,
+        )
+        saved = st.session_state.golden_eval_results
+        successful = sum(item.get("status") == "success" for item in saved.values())
+        failed = sum(item.get("status") == "failed" for item in saved.values())
+        pending_count = len(golden_rows) - successful - failed
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Completed", f"{successful} / 20")
+        m2.metric("Failed", failed)
+        m3.metric("Remaining", pending_count)
+        st.progress(successful / 20, text=f"{successful} of 20 records completed")
+        run_col, reset_col = st.columns([2, 1])
+        run_clicked = run_col.button(
+            "Run / resume evaluation", type="primary",
+            disabled=(successful == 20), use_container_width=True, key="run_resume_golden",
+        )
+        if reset_col.button("Clear session results", use_container_width=True, key="clear_golden_eval"):
+            st.session_state.golden_eval_results = {}
+            st.rerun()
+        if run_clicked:
+            try:
+                evaluation_key = st.secrets.get("GROQ_API_KEY", "")
+            except Exception:
+                evaluation_key = ""
+            if not evaluation_key:
+                st.error("Evaluation is not configured. Add the API secret in your app hosting settings.")
+            else:
+                progress = st.progress(successful / 20, text="Preparing evaluation…")
+                status_box = st.status("Evaluating records. You can resume any failures later.", expanded=True)
+                try:
+                    for index, row in enumerate(golden_rows, start=1):
+                        current = st.session_state.golden_eval_results.get(row["golden_id"], {})
+                        if current.get("status") == "success":
+                            continue
+                        status_box.write(f"{row['golden_id']} · processing")
+                        try:
+                            item = classify_record(row, evaluation_key)
+                        except Exception as exc:
+                            item = {
+                                "golden_id": row["golden_id"], "source_id": row["source_id"],
+                                "status": "failed", "relevance": "", "journey_stage": "",
+                                "primary_theme": "", "sentiment": "", "rationale": "",
+                                "raw_output": "", "error": f"{type(exc).__name__}: {exc}", "attempts": 1,
+                            }
+                        st.session_state.golden_eval_results[row["golden_id"]] = item
+                        done = sum(x.get("status") == "success" for x in st.session_state.golden_eval_results.values())
+                        progress.progress(done / 20, text=f"{done} of 20 records completed")
+                        if item["status"] == "success":
+                            status_box.write(f"{row['golden_id']} · complete")
+                        else:
+                            status_box.write(f"{row['golden_id']} · failed; retained for retry")
+                    status_box.update(label="Evaluation pass finished", state="complete", expanded=False)
+                except Exception as exc:
+                    status_box.update(label="Evaluation paused; completed records are retained", state="error", expanded=True)
+                    st.error(f"Evaluation stopped safely: {exc}")
+                st.rerun()
+
+        saved = st.session_state.golden_eval_results
+        successful = sum(item.get("status") == "success" for item in saved.values())
+        failed_items = [item for item in saved.values() if item.get("status") == "failed"]
+        pending_items = [row for row in golden_rows if row["golden_id"] not in saved]
+        st.markdown("#### Execution status")
+        if successful == 20:
+            st.success("All 20 records have a successful AI classification.")
+        elif failed_items:
+            st.warning(f"{successful} completed · {len(failed_items)} failed · {len(pending_items)} not yet attempted. Run again to retry failures.")
+        else:
+            st.info(f"{successful} completed · {20 - successful} remaining. Run the evaluation when ready.")
+        if failed_items:
+            with st.expander("Failed records and error details", expanded=True):
+                for item in failed_items:
+                    st.write(f"**{item['golden_id']}** · {item.get('error', 'Unknown error')}")
+        if successful:
+            st.markdown("#### Actual agreement results")
+            agreement = calculate_agreement(golden_rows, saved)
+            agreement_cols = st.columns(2)
+            for index, (field, values) in enumerate(agreement.items()):
+                with agreement_cols[index % 2]:
+                    denominator = values["denominator"]
+                    display = f"{values['matches']} / {denominator}" if denominator else "Not available"
+                    st.metric(field, display)
+                    st.caption(f"{values['matches']} exact matches · {values['mismatches']} mismatches · denominator {denominator}")
+            st.caption("Exact-match agreement is shown only for records with both a reference label and a successful AI label. Primary-theme agreement is literal text matching.")
+            mismatches = []
+            for row in golden_rows:
+                ai_item = saved.get(row["golden_id"], {})
+                if ai_item.get("status") != "success":
+                    continue
+                for field, human_key, ai_key in (
+                    ("Relevance", "human_relevance_label", "relevance"),
+                    ("Journey stage", "human_journey_stage", "journey_stage"),
+                    ("Primary theme", "human_primary_theme", "primary_theme"),
+                    ("Sentiment", "human_sentiment", "sentiment"),
+                ):
+                    human_value = (row.get(human_key) or "").strip()
+                    ai_value = (ai_item.get(ai_key) or "").strip()
+                    if human_value and ai_value and human_value != ai_value:
+                        mismatches.append({"Record": row["golden_id"], "Field": field, "Reference": human_value, "AI": ai_value})
+            if mismatches:
+                st.markdown("#### Mismatches to review")
+                st.dataframe(mismatches, use_container_width=True, hide_index=True)
+        if saved:
+            ai_csv = build_results_csv(golden_rows, saved)
+            metadata = evaluation_metadata(saved)
+            st.download_button(
+                "Download AI evaluation results",
+                data=ai_csv,
+                file_name="groww_sip_ai_evaluation_results.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+            with st.expander("Evaluation run details"):
+                st.json(metadata)
+    except Exception as exc:
+        st.error(f"The bundled Golden Set could not be loaded: {exc}")
+
+    # Optional custom-data workflow is isolated from both the fixed corpus and Golden Set.
+    st.markdown("---")
+    with st.expander("Advanced: Explore your own feedback", expanded=False):
+        st.caption("Upload a separate customer-feedback CSV to explore that dataset only. It is never added to the bundled research corpus or Golden Set evaluation.")
+        uploaded = st.file_uploader(
+            "Upload customer feedback (CSV)", type=["csv"],
+            help="Up to 20 MB; use a text column such as content, text, review or comment.",
+            key="custom_feedback_upload",
+        )
+        try:
+            custom_rows = upload_rows(uploaded)
+            if uploaded:
+                st.success(f"Loaded {len(custom_rows):,} records for this separate session workspace.")
+        except (ValueError, UnicodeError) as exc:
+            custom_rows = []
+            st.error(str(exc))
+        if custom_rows:
+            with st.form("custom_question_form", clear_on_submit=False):
+                custom_question = st.text_input(
+                    "Question about this upload", key="custom_question",
+                    placeholder="What themes appear in this feedback?",
+                )
+                custom_submitted = st.form_submit_button("Explore uploaded feedback", use_container_width=True)
+            if custom_submitted:
+                st.session_state.custom_pending_question = custom_question.strip()
+                st.session_state.custom_result = None
+            if st.session_state.custom_pending_question:
+                try:
+                    docs = [Counter(tokenize(row_text(row))) for row in custom_rows]
+                    df = Counter()
+                    for doc in docs:
+                        df.update(doc.keys())
+                    avg_len = sum(sum(doc.values()) for doc in docs) / max(len(docs), 1)
+                    query = expand_query(st.session_state.custom_pending_question)
+                    matches = []
+                    for row, doc in zip(custom_rows, docs):
+                        score = bm25_score(query, doc, df, len(docs), avg_len)
+                        if score >= MIN_SCORE:
+                            item = dict(row)
+                            item["_score"] = score
+                            matches.append(item)
+                    matches.sort(key=lambda item: item["_score"], reverse=True)
+                    st.session_state.custom_result = matches[:TOP_K]
+                    st.session_state.custom_pending_question = ""
+                except Exception as exc:
+                    st.error(f"Could not explore this upload: {exc}")
+            if st.session_state.custom_result is not None:
+                st.markdown("#### Results from your uploaded dataset")
+                st.caption(f"{len(st.session_state.custom_result)} matching records · custom dataset only")
+                for index, row in enumerate(st.session_state.custom_result, start=1):
+                    with st.container(border=True):
+                        st.caption(f"Custom record {index} · {row.get('source_id', 'No ID')}")
+                        st.write(row.get("content", ""))
+                        if row.get("source_url", "").startswith(("https://", "http://")):
+                            st.link_button("Open source", row["source_url"])
+        else:
+            st.info("This workspace is optional. Upload a CSV to explore a separate feedback dataset.")
 
 with right:
-    st.markdown("<div class='references-title'>References</div>", unsafe_allow_html=True)
+    st.markdown('<div class="references-title">Evidence references</div>', unsafe_allow_html=True)
+    result = st.session_state.current_result
     if not result:
-        st.caption("Evidence references appear here after a search.")
+        st.caption("References appear here after a research search.")
     else:
-        latest = result
-        matches = latest["matches"]
-        st.caption(f"Top {len(matches)} evidence examples for this question")
+        matches = result["matches"]
+        st.caption(f"{len(matches)} evidence examples for this question")
         if not matches:
             st.caption("No customer evidence matched strongly enough to cite.")
         for i, row in enumerate(matches):
@@ -534,14 +712,9 @@ with right:
             if kind == "app":
                 label = "Groww app review"
                 provenance = f"Original review ID: {row.get('source_id') or 'not provided'}"
-            elif kind == "public":
+            else:
                 label = row.get("subreddit") or "Public discussion"
                 provenance = f"Original post ID: {row.get('source_id') or 'not provided'}"
-            else:
-                label = row.get("source") or "Uploaded feedback"
-                provenance = f"Uploaded record ID: {row.get('source_id') or 'not provided'}"
-            source_id = str(row.get("source_id") or "not provided")
-            short_id = source_id[:12] + ("…" if len(source_id) > 12 else "")
             ref_code = f"R{i + 1:02d}"
             with st.expander(f"{ref_code} · {label}", expanded=(i == 0)):
                 st.caption(f"{ref_code} · {provenance}")
@@ -550,15 +723,12 @@ with right:
                     st.caption(f"Rating: {row['rating']} / 5")
                 url = row.get("source_url", "")
                 if kind == "public" and url.startswith(("https://", "http://")):
-                    st.link_button("Open original Reddit post ↗", url, use_container_width=True)
+                    st.link_button("Open original discussion ↗", url, use_container_width=True)
                 elif kind == "app":
                     st.link_button("Open Groww on Google Play ↗", GROWW_PLAY_STORE_URL, use_container_width=True)
-                elif kind == "custom" and url.startswith(("https://", "http://")):
-                    st.link_button("Open uploaded source ↗", url, use_container_width=True)
-        question_terms = set(tokenize(latest["question"]))
-        relevant = [g for g in GUIDES if any(term in question_terms or term in latest["question"].lower() for term in g[0])]
+        question_terms = set(tokenize(result["question"]))
+        relevant = [guide for guide in GUIDES if any(term in question_terms or term in result["question"].lower() for term in guide[0])]
         if relevant:
-            with st.expander("Official Groww guidance", expanded=False):
+            with st.expander("Official Groww guidance"):
                 for _, title, url in relevant:
                     st.markdown(f"[{title} ↗]({url})")
-
