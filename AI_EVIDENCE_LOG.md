@@ -79,19 +79,19 @@ Label definitions:
 
 ## 7. Groq per-record classification and agreement
 
-A separate Golden Set evaluator has been added to the Streamlit app in the expander **“Golden Set evaluation — run Groq classification on 20 records”**. It sends each of the 20 records individually to Groq using a fixed classification prompt and the same configured model. It produces a downloadable CSV with per-record AI labels and raw model outputs.
+A separate Golden Set evaluation section now appears immediately after the Research Workspace. It automatically loads the bundled 20-record CSV, sends each record individually to the configured model, retains per-record raw AI responses, supports retrying failed records during the active Streamlit session, calculates field-wise exact-match agreement against the preserved reference labels, and provides a downloadable results CSV.
 
-**Execution status:** The evaluator code is committed, but it has not yet been run in the deployed Streamlit session. Therefore, no AI labels, agreement rate or classifier performance are claimed yet.
+**Execution status:** The evaluator runs on demand in the deployed app. No evaluation result or agreement rate is claimed in this documentation until a user executes it and downloads the resulting file. The app displays live progress and the actual completed/failed counts.
 
 To execute once:
 1. Open the live Discovery Engine.
-2. Expand “Golden Set evaluation — run Groq classification on 20 records”.
-3. Click “Run Groq classification on Golden Set (20 records)”.
-4. Download `groq_golden_set_results.csv`.
+2. Open the “Golden Set evaluation” section directly below the research workspace.
+3. Click “Run / resume evaluation”.
+4. Download `groww_sip_ai_evaluation_results.csv`.
 
 The evaluator uses the existing Streamlit secret `GROQ_API_KEY`; it does not display the key. Groq free-tier rate limits may apply. The AI result file must be retained as evidence.
 
-After the result CSV is available, calculate exact-match agreement separately for relevance, journey stage and sentiment. Theme agreement should be reviewed separately because themes are free-text labels; normalize or adjudicate theme equivalence before scoring. Report the denominator and disagreements. Do not combine fields into a single accuracy number without a declared method.
+The app calculates exact-match agreement separately for relevance, journey stage, primary theme and sentiment, with a visible denominator and mismatch list. Primary-theme agreement is literal text matching, so semantically similar wording can count as a mismatch. No combined accuracy score is presented.
 
 ## 8. Three AI output corrections / rejections
 
@@ -109,14 +109,24 @@ Can support discovery of reported friction themes, evidence retrieval, hypothesi
 
 Cannot establish issue prevalence, causality, 12-month continuation, churn drivers or that a proposed feature will improve retention. Public comments are not a longitudinal cohort.
 
-## 10. Next actions
+## 10. Product information architecture
+
+The app is organized into three distinct capabilities:
+
+1. **Research Workspace** — primary entry point for evidence search, discovery brief, source references and AI-assisted interpretation.
+2. **Golden Set evaluation** — fixed, bundled 20-record benchmark immediately after the research workspace. It does not accept uploads or modify reference labels. Progress and results are held in Streamlit session state; a downloaded CSV preserves the raw outputs for audit. If the app session is restarted, rerun the records that were not exported; session progress is not a permanent server-side job store.
+3. **Advanced: Explore your own feedback** — optional CSV upload and custom-only retrieval. Uploaded rows are never added to the bundled research corpus or Golden Set.
+
+Provider/model/API details remain in this technical evidence log and source documentation, not in the primary interface.
+
+## 11. Next actions
 
 1. Run the new Golden Set evaluator in the live app and save its CSV output.
 2. Review field-wise agreement and disagreements against the friend-reviewed reference labels; retain the reviewer provenance as project-owner-reported.
 3. Capture three distinct AI interactions and document any actual corrections/rejections. If an output is sound, do not invent a correction.
 4. Keep survey/interview findings from the separate primary research distinct from public desk-research signals.
 
-## 11. Project links
+## 12. Project links
 
 - Live Discovery Engine: https://groww-sip-discovery-engine123.streamlit.app/
 - Repository: https://github.com/Omi2456/groww-sip-discovery-engine
