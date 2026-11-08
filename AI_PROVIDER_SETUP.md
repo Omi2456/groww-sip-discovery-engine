@@ -1,35 +1,18 @@
-# Enable Groq-assisted discovery
+# AI provider setup
 
-The BM25 evidence search works without Groq. Groq adds an optional interpretation step over only the top five records already retrieved for the current question.
+The app uses deterministic BM25 retrieval for evidence discovery. Groq provides optional AI-assisted interpretation and Golden Set classification.
 
-## Configure the key on Streamlit Community Cloud
+## Configure Streamlit Community Cloud
 
 1. Open the deployed app in Streamlit Community Cloud.
-2. Open the app menu and choose Settings, then Secrets.
-3. Add this TOML, replacing the placeholder with your Groq Console key:
+2. Open app settings and select Secrets.
+3. Add `GROQ_API_KEY = "your-key"` using your own Groq Console key.
+4. Save the setting and allow the app to restart.
 
-```toml
-GROQ_API_KEY = "paste-your-key-here"
-```
+Never paste the key into chat, screenshots, source code or GitHub. Never commit credentials or a `.env` file.
 
-4. Save the secrets. Streamlit will restart the app.
-5. Run a research question that returns evidence, then choose Analyze retrieved evidence with Groq.
+## Request scope
 
-Do not paste the key into chat, source code, GitHub files, screenshots, or the evidence log. Do not commit a .env file. If the key has been exposed, revoke it in Groq Console and create a replacement.
+Research synthesis sends the current research question and up to five retrieved excerpts to Groq. The model is instructed to use only supplied evidence and cite only supplied evidence IDs. Counts are calculated by application code. Opportunities are hypotheses, not validated solutions.
 
-## What is sent to Groq
-
-Only the current question and up to five BM25-retrieved excerpts, with their displayed evidence IDs and limited source metadata. Do not upload private interviews, account details, or sensitive personal information.
-
-## Evidence safeguards
-
-- Groq may interpret only the retrieved excerpts; it must not invent counts or customer prevalence.
-- The app filters returned citations to the evidence IDs supplied in that request.
-- Counts remain calculated by deterministic app code.
-- Opportunities are explicitly hypotheses, not validated solutions.
-- Public reviews do not establish 12-month SIP continuation or causality.
-- If Groq is unavailable or no key is configured, deterministic search still works.
-
-## Evaluation still required
-
-Before presenting AI quality as proven, manually label a golden set, compare AI outputs with human labels, record agreement, and document examples where an AI output was corrected or rejected. Do not invent those results.
+The fixed benchmark is separate from custom feedback uploads. Public feedback is self-selected and does not establish prevalence, causality or 12-month SIP retention.
