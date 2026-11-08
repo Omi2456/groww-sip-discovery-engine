@@ -70,7 +70,7 @@ Twenty records were purposively selected from the 27 public discussions for topi
 
 The CSV contains source text, source URL, source scope, and proposed relevance, journey-stage, theme, sentiment, impact and rationale labels.
 
-**Human-review provenance:** The project owner reports that a friend reviewed the 20 proposed labels and said they were correct. The reviewer’s identity is withheld. This log records that as a project-owner-reported review; the review itself has not been independently witnessed or audited by the system. The original labels were first proposed by ChatGPT. The CSV marks the status as `FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER`, not as a formal external audit.
+**Human-review provenance:** The project owner reports that a friend reviewed the 20 proposed labels and said they were correct. The reviewer’s identity is withheld. This log records that as a project-owner-reported review; the review itself has not been independently witnessed or audited by the system. The original labels were first proposed by ChatGPT. The CSV marks the status as `Friend-reviewed (reported by project owner)`, not as a formal external audit.
 
 Label definitions:
 - Relevance: Explicit SIP; Adjacent SIP; Not relevant.
@@ -136,7 +136,7 @@ Provider/model/API details remain in this technical evidence log and source docu
 
 ## Reference-label provenance disclosure
 
-All 20 benchmark records carry the source status `FRIEND_REVIEWED_REPORTED_BY_PROJECT_OWNER`. The reference labels were friend-reviewed as reported by the project owner. This status does not independently establish verification by an external annotator, an independent expert, or a formal inter-rater process. The labels are retained as supplied and have not been relabelled to improve agreement. Treat benchmark agreement as comparison against these reported reference labels, not an independently validated ground truth.
+All 20 benchmark records carry the source status `Friend-reviewed (reported by project owner)`. The reference labels were friend-reviewed as reported by the project owner. This status does not independently establish verification by an external annotator, an independent expert, or a formal inter-rater process. The labels are retained as supplied and have not been relabelled to improve agreement. Treat benchmark agreement as comparison against these reported reference labels, not an independently validated ground truth.
 
 ## Failed records in the inspected evaluation export
 
