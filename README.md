@@ -4,7 +4,7 @@ An evidence-first discovery tool for exploring customer feedback about Groww SIP
 
 ## Try the live app
 
-The app is designed for Streamlit Community Cloud. Evidence retrieval works without an API key; AI interpretation and Golden Set evaluation use the configured API secret. See [UPLOAD_AND_DEPLOY.md](UPLOAD_AND_DEPLOY.md) for deployment steps.
+The app is deployed on Streamlit Community Cloud from the `ai-discovery-gemini` branch with `streamlit_app.py` as its entrypoint. Evidence retrieval works without an API key; AI interpretation and Golden Set evaluation use the configured API secret. See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment steps.
 
 ## What the engine does
 
@@ -26,7 +26,7 @@ The app uses **3,273 SIP-related Groww review records** and **27 source-linked p
 - `groww_sip_explicit_candidates.csv`: review subset loaded by the app, with original review IDs and available metadata.
 - `groww_sip_reddit_pilot.csv`: public discussions loaded by the app, with source IDs and direct URLs.
 - `groww_sip_discovery_evidence.csv`: combined, structured evidence table with stable evidence IDs and original IDs preserved.
-- `dataset_manifest.json` and `README_data_provenance.txt`: counts, fields, and traceability notes.
+- `dataset_manifest.json` and `DATA_PROVENANCE.md`: counts, fields, and traceability notes.
 
 Reddit references link to original discussions. Groww review IDs are preserved, but the source dataset does not provide verified individual Play Store review URLs; the app links to the general Groww listing and identifies it as such.
 
